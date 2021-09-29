@@ -145,7 +145,7 @@ class TrigramModel(object):
         Generate a random sentence from the trigram model. t specifies the
         max length, but the sentence may be shorter if STOP is reached.
         """
-        return result
+        return
 
     def smoothed_trigram_probability(self, trigram):
         """
