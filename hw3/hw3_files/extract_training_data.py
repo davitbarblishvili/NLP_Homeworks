@@ -4,6 +4,7 @@ import copy
 import sys
 import keras
 import numpy as np
+import tensorflow as tf
 
 
 class State(object):
@@ -126,54 +127,94 @@ class FeatureExtractor(object):
         if len(stack) == 0:
             representation_[0:3] = self.word_vocab["<NULL>"]
 
-        if len(stack) == 1:
+        elif len(stack) == 1:
             representation_[0] = self.word_vocab["<ROOT>"]
             representation_[1:3] = self.word_vocab["<NULL>"]
 
-        if len(stack) == 2:
+        elif len(stack) == 2:
             representation_[1] = self.word_vocab["<ROOT>"]
             representation_[2:3] = self.word_vocab["<NULL>"]
 
-            if pos[state.stack[-1]] == "CD":
+            if pos[stack[-1]] == "CD":
                 representation_[0] = self.word_vocab["<CD>"]
-            elif pos[state.stack[-1]] == "NNP":
+            elif pos[stack[-1]] == "NNP":
                 representation_[0] = self.word_vocab["<NNP>"]
-            elif pos[state.stack[-1]] == "UNK":
-                representation_[0] = self.word_vocab["<UNK>"]
             else:
-                representation_[0] = self.word_vocab[words[stack[-1]].lower()]
+                representation_[0] = self.word_vocab["<UNK>"]
 
-        if len(stack) == 3:
+        elif len(stack) == 3:
             representation_[2] = self.word_vocab["<ROOT>"]
 
             for i in range(-1, -3, -1):
-                if pos[state.stack[i]] == "CD":
+                if pos[stack[i]] == "CD":
                     representation_[abs(i) - 1] = self.word_vocab["<CD>"]
-                elif pos[state.stack[i]] == "NNP":
+                elif pos[stack[i]] == "NNP":
                     representation_[abs(i) - 1] = self.word_vocab["<NNP>"]
-                elif pos[state.stack[i]] == "UNK":
-                    representation_[abs(i) - 1] = self.word_vocab["<UNK>"]
                 else:
-                    representation_[
-                        abs(i) - 1] = self.word_vocab[words[stack[i]].lower()]
+                    representation_[abs(i) - 1] = self.word_vocab["<UNK>"]
 
         else:
             for i in range(-1, -4, -1):
-                if pos[state.stack[i]] == "CD":
+                if pos[stack[i]] == "CD":
                     representation_[abs(i) - 1] = self.word_vocab["<CD>"]
-                elif pos[state.stack[i]] == "NNP":
+                elif pos[stack[i]] == "NNP":
                     representation_[abs(i) - 1] = self.word_vocab["<NNP>"]
-                elif words[state.stack[i]].lower() not in self.word_vocab.keys():
-                    representation_[abs(i) - 1] = self.word_vocab["<UNK>"]
                 else:
-                    representation_[
-                        abs(i) - 1] = self.word_vocab[words[stack[i]].lower()]
+                    representation_[abs(i) - 1] = self.word_vocab["<UNK>"]
 
+        if len(buffer) == 0:
+            representation_[3:6] = self.word_vocab["<NULL>"]
+
+        elif len(buffer) == 1:
+            representation_[4:6] = self.word_vocab["<NULL>"]
+
+            if buffer[-1] == 0:
+                representation_[3] = self.word_vocab["<ROOT>"]
+            elif pos[buffer[-1]] == "CD":
+                representation_[3] = self.word_vocab["<CD>"]
+            elif pos[buffer[-1]] == "NNP":
+                representation_[3] = self.word_vocab["<NNP>"]
+            else:
+                representation_[3] = self.word_vocab["<UNK>"]
+
+        elif len(buffer) == 2:
+            representation_[5] = self.word_vocab["<NULL>"]
+
+            for i in range(-1, -3, -1):
+                if buffer[i] == 0:
+                    representation_[2 + abs(i)] = self.word_vocab["<ROOT>"]
+                elif pos[buffer[i]] == "CD":
+                    representation_[2 + abs(i)] = self.word_vocab["<CD>"]
+                elif pos[buffer[i]] == "NNP":
+                    representation_[2 + abs(i)] = self.word_vocab["<NNP>"]
+                else:
+                    representation_[2 + abs(i)] = self.word_vocab["<UNK>"]
+
+        else:
+            for i in range(-1, -4, -1):
+                if buffer[i] == 0:
+                    representation_[2 + abs(i)] = self.word_vocab["<ROOT>"]
+                elif pos[buffer[i]] == "CD":
+                    representation_[2 + abs(i)] = self.word_vocab["<CD>"]
+                elif pos[buffer[i]] == "NNP":
+                    representation_[2 + abs(i)] = self.word_vocab["<NNP>"]
+                else:
+                    representation_[2 + abs(i)] = self.word_vocab["<UNK>"]
+        print(representation_)
         return representation_
 
     def get_output_representation(self, output_pair):
         # TODO: Write this method for Part 2
-        return np.zeros(91)
+        (transition, label) = output_pair
+
+        # store left_arc actions from index 0 to 44; right_arc actions from index 45 to 89; shift store in index 90
+        if transition == "left_arc":
+            index = dep_relations.index((label))
+        if transition == "right_arc":
+            index = dep_relations.index((label)) + 45
+        if transition == "shift":
+            index = 90
+        return tf.keras.utils.to_categorical(index, num_classes=91)
 
 
 def get_training_matrices(extractor, in_file):
