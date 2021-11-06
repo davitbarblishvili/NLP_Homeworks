@@ -200,7 +200,7 @@ class FeatureExtractor(object):
                     representation_[2 + abs(i)] = self.word_vocab["<NNP>"]
                 else:
                     representation_[2 + abs(i)] = self.word_vocab["<UNK>"]
-        print(representation_)
+
         return representation_
 
     def get_output_representation(self, output_pair):
