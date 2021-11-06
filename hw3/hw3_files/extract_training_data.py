@@ -139,8 +139,10 @@ class FeatureExtractor(object):
                 representation_[0] = self.word_vocab["<CD>"]
             elif pos[stack[-1]] == "NNP":
                 representation_[0] = self.word_vocab["<NNP>"]
-            else:
+            elif words[stack[-1]].lower() not in self.word_vocab.keys():
                 representation_[0] = self.word_vocab["<UNK>"]
+            else:
+                representation_[0] = self.word_vocab[words[stack[-1]].lower()]
 
         elif len(stack) == 3:
             representation_[2] = self.word_vocab["<ROOT>"]
@@ -150,8 +152,11 @@ class FeatureExtractor(object):
                     representation_[abs(i) - 1] = self.word_vocab["<CD>"]
                 elif pos[stack[i]] == "NNP":
                     representation_[abs(i) - 1] = self.word_vocab["<NNP>"]
-                else:
+                elif words[state.stack[i]].lower() not in self.word_vocab.keys():
                     representation_[abs(i) - 1] = self.word_vocab["<UNK>"]
+                else:
+                    representation_[
+                        abs(i) - 1] = self.word_vocab[words[stack[i]].lower()]
 
         else:
             for i in range(-1, -4, -1):
@@ -159,8 +164,11 @@ class FeatureExtractor(object):
                     representation_[abs(i) - 1] = self.word_vocab["<CD>"]
                 elif pos[stack[i]] == "NNP":
                     representation_[abs(i) - 1] = self.word_vocab["<NNP>"]
-                else:
+                elif words[stack[i]].lower() not in self.word_vocab.keys():
                     representation_[abs(i) - 1] = self.word_vocab["<UNK>"]
+                else:
+                    representation_[
+                        abs(i) - 1] = self.word_vocab[words[stack[i]].lower()]
 
         if len(buffer) == 0:
             representation_[3:6] = self.word_vocab["<NULL>"]
@@ -174,8 +182,10 @@ class FeatureExtractor(object):
                 representation_[3] = self.word_vocab["<CD>"]
             elif pos[buffer[-1]] == "NNP":
                 representation_[3] = self.word_vocab["<NNP>"]
-            else:
+            elif words[buffer[-1]].lower() not in self.word_vocab.keys():
                 representation_[3] = self.word_vocab["<UNK>"]
+            else:
+                representation_[3] = self.word_vocab[words[buffer[-1]].lower()]
 
         elif len(buffer) == 2:
             representation_[5] = self.word_vocab["<NULL>"]
@@ -187,8 +197,11 @@ class FeatureExtractor(object):
                     representation_[2 + abs(i)] = self.word_vocab["<CD>"]
                 elif pos[buffer[i]] == "NNP":
                     representation_[2 + abs(i)] = self.word_vocab["<NNP>"]
-                else:
+                elif words[buffer[i]].lower() not in self.word_vocab.keys():
                     representation_[2 + abs(i)] = self.word_vocab["<UNK>"]
+                else:
+                    representation_[
+                        2 + abs(i)] = self.word_vocab[words[buffer[i]].lower()]
 
         else:
             for i in range(-1, -4, -1):
@@ -198,8 +211,11 @@ class FeatureExtractor(object):
                     representation_[2 + abs(i)] = self.word_vocab["<CD>"]
                 elif pos[buffer[i]] == "NNP":
                     representation_[2 + abs(i)] = self.word_vocab["<NNP>"]
-                else:
+                elif words[buffer[i]].lower() not in self.word_vocab.keys():
                     representation_[2 + abs(i)] = self.word_vocab["<UNK>"]
+                else:
+                    representation_[
+                        2 + abs(i)] = self.word_vocab[words[buffer[i]].lower()]
 
         return representation_
 
