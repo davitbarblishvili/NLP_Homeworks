@@ -2,10 +2,8 @@ from conll_reader import DependencyStructure, DependencyEdge, conll_reader
 from collections import defaultdict
 import copy
 import sys
-
 import numpy as np
 import keras
-
 from extract_training_data import FeatureExtractor, State
 
 
@@ -38,17 +36,13 @@ class Parser(object):
                 if len(state.buffer) > 1:
                     transitions.append('shift')
 
-            # As long as the buffer is not empty,
             # use the feature extractor to obtain a representation of the current state
             input_rep = self.extractor.get_input_representation(
                 words, pos, state).reshape((1, 6))
-            # print(input_rep)
 
-            # Call model.predict(features) and retrieve a softmax actived vector of possible actions
+            # retrieve possible actions
             predict = self.model.predict(input_rep)[0]
-            # print(predict)
             index = list(np.argsort(predict)[::-1])
-            # print(index)
 
             for i in index:
                 action, label = self.output_labels[i]
