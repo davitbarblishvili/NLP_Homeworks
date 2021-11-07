@@ -9,7 +9,7 @@ import tensorflow as tf
 
 def build_model(word_types, pos_types, outputs):
     # TODO: Write this function for part 3
-    model = Sequential()
+    model = tf.keras.Sequential()
     model.add(Embedding(input_dim=word_types, output_dim=32, input_length=6))
     model.add(Flatten())
     model.add(Dense(units=100, activation="relu"))
