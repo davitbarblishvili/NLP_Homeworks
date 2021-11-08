@@ -223,8 +223,6 @@ class FeatureExtractor(object):
     def get_output_representation(self, output_pair):
         # TODO: Write this method for Part 2
         (transition, label) = output_pair
-
-        # store left_arc actions from index 0 to 44; right_arc actions from index 45 to 89; shift store in index 90
         if transition == "left_arc":
             index = dep_relations.index((label))
         if transition == "right_arc":

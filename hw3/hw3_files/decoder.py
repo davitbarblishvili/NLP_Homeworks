@@ -5,7 +5,7 @@ import sys
 import numpy as np
 import keras
 import tensorflow as tf
-from extract_training_data import FeatureExtractor, State, dep_relations
+from extract_training_data import FeatureExtractor, State
 
 
 class Parser(object):
@@ -13,6 +13,8 @@ class Parser(object):
     def __init__(self, extractor, modelfile):
         self.model = tf.keras.models.load_model(modelfile)
         self.extractor = extractor
+        self.dep_relations = ['tmod', 'vmod', 'csubjpass', 'rcmod', 'ccomp', 'poss', 'parataxis', 'appos', 'dep', 'iobj', 'pobj', 'mwe', 'quantmod', 'acomp', 'number', 'csubj', 'root', 'auxpass', 'prep', 'mark', 'expl', 'cc',
+                              'npadvmod', 'prt', 'nsubj', 'advmod', 'conj', 'advcl', 'punct', 'aux', 'pcomp', 'discourse', 'nsubjpass', 'predet', 'cop', 'possessive', 'nn', 'xcomp', 'preconj', 'num', 'amod', 'dobj', 'neg', 'dt', 'det']
 
         # The following dictionary from indices to output actions will be useful
         self.output_labels = dict([(index, action) for (
@@ -24,28 +26,27 @@ class Parser(object):
 
         while state.buffer:
 
-            input_rep = self.extractor.get_input_representation(
+            representation_ = self.extractor.get_input_representation(
                 words, pos, state)
-            possible_moves = self.model(np.array([input_rep]), training=False)
-            sorted_transition_index = reversed(np.argsort(possible_moves)[
-                                               0])  # sort all possible moves
+            possible_moves = self.model(
+                np.array([representation_]), training=False)
+            sorted_indices = reversed(np.argsort(possible_moves)[
+                0])
 
-            # https://www.geeksforgeeks.org/filter-in-python/
-            # filter out legal moves according to current stack and buffer
-            legal_moves = list(filter(legality(state), np.arange(91)))
+            allowed_operations = list(filter(legality(state), np.arange(91)))
 
-            # filter out legal moves in sorted possible moves
+            # filter allowed operations
             legal_transition_index = list(
-                filter(contain(legal_moves), sorted_transition_index))
+                filter(contain(allowed_operations), sorted_indices))
             # pick out the highest scoring permitted transition
             transition_index = legal_transition_index[0]
 
             if transition_index < 45:
                 (operator, label) = ("left_arc",
-                                     dep_relations[transition_index])
+                                     self.dep_relations[transition_index])
             elif transition_index < 90:
                 (operator,
-                 label) = ("right_arc", dep_relations[transition_index - 45])
+                 label) = ("right_arc", self.dep_relations[transition_index - 45])
             else:
                 (operator, label) = ("shift", None)
 
@@ -80,9 +81,9 @@ def legality(state):
     return if_legal
 
 
-def contain(legal_moves):
-    def if_contain(sorted_transition_index):
-        return sorted_transition_index in legal_moves
+def contain(allowed_operations):
+    def if_contain(sorted_indices):
+        return sorted_indices in allowed_operations
     return if_contain
 
 
