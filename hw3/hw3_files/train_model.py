@@ -10,11 +10,12 @@ import tensorflow as tf
 def build_model(word_types, pos_types, outputs):
     # TODO: Write this function for part 3
     model = tf.keras.Sequential()
-    model.add(Embedding(input_dim=word_types, output_dim=32, input_length=6))
-    model.add(Flatten())
-    model.add(Dense(units=100, activation="relu"))
-    model.add(Dense(units=10, activation="relu"))
-    model.add(Dense(units=outputs, activation="softmax"))
+    model.add(tf.keras.layers.Embedding(
+        input_dim=word_types, output_dim=32, input_length=6))
+    model.add(tf.keras.layers.Flatten())
+    model.add(tf.keras.layers.Dense(units=100, activation="relu"))
+    model.add(tf.keras.layers.Dense(units=10, activation="relu"))
+    model.add(tf.keras.layers.Dense(units=outputs, activation="softmax"))
     model.compile(tf.keras.optimizers.Adam(lr=0.01),
                   loss="categorical_crossentropy")
     return model

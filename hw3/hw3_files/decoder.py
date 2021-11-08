@@ -4,13 +4,14 @@ import copy
 import sys
 import numpy as np
 import keras
-from extract_training_data import FeatureExtractor, State
+import tensorflow as tf
+from extract_training_data import FeatureExtractor, State, dep_relations
 
 
 class Parser(object):
 
     def __init__(self, extractor, modelfile):
-        self.model = keras.models.load_model(modelfile)
+        self.model = tf.keras.models.load_model(modelfile)
         self.extractor = extractor
 
         # The following dictionary from indices to output actions will be useful
@@ -22,43 +23,67 @@ class Parser(object):
         state.stack.append(0)
 
         while state.buffer:
-            # TODO: Write the body of this loop for part 4
-            transitions = []
-            if not state.stack:
-                transitions.append('shift')
-            elif state.stack[-1] == 0:
-                transitions.append('right_arc')
-                if len(state.buffer) > 1:
-                    transitions.append('shift')
-            else:
-                transitions.append('right_arc')
-                transitions.append('left_arc')
-                if len(state.buffer) > 1:
-                    transitions.append('shift')
 
-            # use the feature extractor to obtain a representation of the current state
             input_rep = self.extractor.get_input_representation(
-                words, pos, state).reshape((1, 6))
+                words, pos, state)
+            possible_moves = self.model(np.array([input_rep]), training=False)
+            sorted_transition_index = reversed(np.argsort(possible_moves)[
+                                               0])  # sort all possible moves
 
-            # retrieve possible actions
-            predict = self.model(input_rep, training=False)[0]
-            index = list(np.argsort(predict)[::-1])
+            # https://www.geeksforgeeks.org/filter-in-python/
+            # filter out legal moves according to current stack and buffer
+            legal_moves = list(filter(legality(state), np.arange(91)))
 
-            for i in index:
-                action, label = self.output_labels[i]
-                if action in transitions:
-                    if action == 'shift':
-                        state.shift()
-                    elif action == 'left_arc':
-                        state.left_arc(label)
-                    else:
-                        state.right_arc(label)
-                    break
+            # filter out legal moves in sorted possible moves
+            legal_transition_index = list(
+                filter(contain(legal_moves), sorted_transition_index))
+            # pick out the highest scoring permitted transition
+            transition_index = legal_transition_index[0]
+
+            if transition_index < 45:
+                (operator, label) = ("left_arc",
+                                     dep_relations[transition_index])
+            elif transition_index < 90:
+                (operator,
+                 label) = ("right_arc", dep_relations[transition_index - 45])
+            else:
+                (operator, label) = ("shift", None)
+
+            if operator == "left_arc":
+                state.left_arc(label)
+            if operator == "right_arc":
+                state.right_arc(label)
+            if operator == "shift":
+                state.shift()
 
         result = DependencyStructure()
         for p, c, r in state.deps:
             result.add_deprel(DependencyEdge(c, words[c], pos[c], p, r))
         return result
+
+
+def legality(state):
+    def if_legal(transition_index):
+        # arc-left or arc-right are not permitted the stack is empty
+        if len(state.stack) == 0:
+            if transition_index < 90:
+                return False
+        # shifting the only word out of the buffer is also illegal, when the stack is not empty
+        if (len(state.stack) > 0) and (len(state.buffer) == 1):
+            if transition_index == 90:
+                return False
+        # the root node must never be the target of a left-arc
+        if (len(state.stack) > 0) and (state.stack[-1] == 0):
+            if transition_index < 45:
+                return False
+        return True
+    return if_legal
+
+
+def contain(legal_moves):
+    def if_contain(sorted_transition_index):
+        return sorted_transition_index in legal_moves
+    return if_contain
 
 
 if __name__ == "__main__":
