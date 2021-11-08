@@ -41,7 +41,7 @@ class Parser(object):
                 words, pos, state).reshape((1, 6))
 
             # retrieve possible actions
-            predict = self.model.predict(input_rep)[0]
+            predict = self.model(input_rep, training=False)[0]
             index = list(np.argsort(predict)[::-1])
 
             for i in index:
