@@ -30,16 +30,35 @@ class Parser(object):
                 words, pos, state)
             possible_moves = self.model(
                 np.array([representation_]), training=False)
-            sorted_indices = reversed(np.argsort(possible_moves)[
-                0])
+            sorted_indices = np.argsort(possible_moves)[
+                0]
+            allowed_operations = []
 
-            allowed_operations = list(filter(legality(state), np.arange(91)))
+            for transition_index in range(0, 91):
+                if len(state.stack) == 0:
+                    if transition_index >= 90:
+                        allowed_operations.append(transition_index)
 
-            # filter allowed operations
-            legal_transition_index = list(
-                filter(contain(allowed_operations), sorted_indices))
+                # shifting the only word out of the buffer is also illegal, when the stack is not empty
+                elif (len(state.stack) > 0) and (len(state.buffer) == 1):
+                    if transition_index != 90:
+                        allowed_operations.append(transition_index)
+
+                # the root node must never be the target of a left-arc
+                elif (len(state.stack) > 0) and (state.stack[-1] == 0):
+                    if transition_index >= 45:
+                        allowed_operations.append(transition_index)
+                else:
+                    allowed_operations.append(transition_index)
+            allowed_operations = list(allowed_operations)
+
             # pick out the highest scoring permitted transition
-            transition_index = legal_transition_index[0]
+            legal_tranisitions = []
+            for index in reversed(sorted_indices):
+                if index in allowed_operations:
+                    legal_tranisitions.append(index)
+
+            transition_index = legal_tranisitions[0]
 
             if transition_index < 45:
                 (operator, label) = ("left_arc",
@@ -61,30 +80,6 @@ class Parser(object):
         for p, c, r in state.deps:
             result.add_deprel(DependencyEdge(c, words[c], pos[c], p, r))
         return result
-
-
-def legality(state):
-    def if_legal(transition_index):
-        # arc-left or arc-right are not permitted the stack is empty
-        if len(state.stack) == 0:
-            if transition_index < 90:
-                return False
-        # shifting the only word out of the buffer is also illegal, when the stack is not empty
-        if (len(state.stack) > 0) and (len(state.buffer) == 1):
-            if transition_index == 90:
-                return False
-        # the root node must never be the target of a left-arc
-        if (len(state.stack) > 0) and (state.stack[-1] == 0):
-            if transition_index < 45:
-                return False
-        return True
-    return if_legal
-
-
-def contain(allowed_operations):
-    def if_contain(sorted_indices):
-        return sorted_indices in allowed_operations
-    return if_contain
 
 
 if __name__ == "__main__":
